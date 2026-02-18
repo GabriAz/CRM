@@ -70,12 +70,22 @@ Você precisará hospedar a pasta `backend` em outro lugar.
 
 ---
 
-## Usuário Admin Padrão
 
-Se você já tinha um usuário criado localmente, ele estará no banco se você exportou os dados.
-Se não, você pode criar um usuário inserindo manualmente no banco ou usando a tela de cadastro (se habilitada).
+### Criando o Primeiro Usuário Admin (Importante!)
 
-**Dúvidas?**
-Entre em contato com o suporte de desenvolvimento.
+Como o banco de dados começa vazio, você precisa criar o primeiro acesso manualmente.
 
-🚀 **Studio Que CRM - Pronto para Decolar!**
+1.  Acesse o **phpMyAdmin** no painel da Hostinger.
+2.  Clique no banco de dados do projeto (`u902969383_crmstudio`).
+3.  Vá na aba **SQL** (no topo).
+4.  Cole o comando abaixo e clique em **Executar** (ou Go):
+
+```sql
+INSERT INTO users (name, email, password_hash, role, can_manage_users, created_at)
+VALUES ('Admin Studio Que', 'admin@studioque.cafe', '$2b$10$L3kh7nCeg/hXrfwyXfVvUuTo1DxRAHEqL6dhB75ff4E4VJFZ.i0pu', 'admin', TRUE, NOW());
+```
+
+5.  Pronto! Agora você pode logar com:
+    *   **Email:** `admin@studioque.cafe`
+    *   **Senha:** `admin123`
+

@@ -77,3 +77,7 @@ CREATE TABLE IF NOT EXISTS activity_logs (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- 7. Usuário Admin Padrão
+INSERT INTO users (name, email, password_hash, role, can_manage_users, created_at)
+VALUES ('Admin Studio Que', 'admin@studioque.cafe', '$2b$10$L3kh7nCeg/hXrfwyXfVvUuTo1DxRAHEqL6dhB75ff4E4VJFZ.i0pu', 'admin', TRUE, NOW());
