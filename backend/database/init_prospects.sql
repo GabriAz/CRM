@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS prospects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    phone VARCHAR(50),
+    email VARCHAR(255),
+    notes TEXT,
+    priority ENUM('Baixa', 'Média', 'Alta') DEFAULT 'Média',
+    status VARCHAR(50) DEFAULT 'Lead',
+    column_id INT DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS interactions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    prospect_id INT NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    notes TEXT,
+    date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (prospect_id) REFERENCES prospects(id) ON DELETE CASCADE
+);
