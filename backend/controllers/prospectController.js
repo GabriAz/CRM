@@ -92,14 +92,17 @@ const updateProspectStatus = async (req, res) => {
       [column_id, status, id]
     );
 
+    const [[prospect]] = await req.db.query('SELECT name FROM prospects WHERE id = ?', [id]);
+    const prospectName = prospect?.name || `ID ${id}`;
+
     if (userId) {
-      await logAction(req.db, userId, 'MOVE_CARD', `Moveu prospecto ID ${id} para ${status}`);
+      await logAction(req.db, userId, 'MOVE_CARD', `Moveu prospecto ${prospectName} para ${status}`);
     }
 
-    await notifyAll(req.db, 'MOVE_CARD', `Prospecto movido para ${status}`, id);
+    await notifyAll(req.db, 'MOVE_CARD', `Prospecto ${prospectName} movido para ${status}`, id);
 
     // Telegram
-    await sendMessage(`<b>🔄 Card Movido</b>\n👤 ID: ${id}\n📍 Nova Fase: ${status}`);
+    await sendMessage(`<b>🔄 Card Movido</b>\n👤 ${prospectName}\n📍 Nova Fase: ${status}`);
 
     res.json({ success: true, id, column_id, status });
   } catch (error) {

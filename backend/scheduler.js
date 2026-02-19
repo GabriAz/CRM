@@ -52,32 +52,67 @@ async function checkAppointments() {
             const diffMinutes = Math.floor(diffMs / 1000 / 60);
 
             for (const r of REMINDERS) {
-                // Check if within window (e.g., matching minute +/- 5 mins tolerance)
-                // We use a range to avoid missing if cron skips a minute, but verify with logs
                 if (diffMinutes >= r.minutes - 5 && diffMinutes <= r.minutes + 5) {
-
-                    // Check if already sent
                     const [logs] = await connection.query(
                         'SELECT id FROM reminder_logs WHERE prospect_id = ? AND reminder_type = ?',
                         [prospect.id, r.label]
                     );
 
                     if (logs.length === 0) {
-                        // Send notification
                         const msg = `
 <b>${r.text}</b>
 👤 <b>${prospect.name}</b>
 📅 ${actionDate.toLocaleString('pt-BR')}
-📝 ${prospect.next_action || 'Sem descrição'}
+📝 ${prospect.next_action || 'Compromisso agendado'}
                         `;
                         await sendMessage(msg);
 
-                        // Log actions
                         await connection.query(
                             'INSERT INTO reminder_logs (prospect_id, reminder_type) VALUES (?, ?)',
                             [prospect.id, r.label]
                         );
                         console.log(`✅ Reminder ${r.label} sent for prospect ${prospect.id}`);
+                    }
+                }
+            }
+        }
+
+        // Check appointments table
+        const [appointments] = await connection.query(`
+            SELECT a.id, a.title, a.date_start, a.description, a.type, p.name as prospect_name
+            FROM appointments a
+            LEFT JOIN prospects p ON a.prospect_id = p.id
+            WHERE a.date_start > NOW()
+        `);
+
+        for (const appt of appointments) {
+            const apptDate = new Date(appt.date_start);
+            const diffMs = apptDate - now;
+            const diffMinutes = Math.floor(diffMs / 1000 / 60);
+            const apptLogId = appt.id + 100000; // offset to avoid collision with prospect IDs
+
+            for (const r of REMINDERS) {
+                if (diffMinutes >= r.minutes - 5 && diffMinutes <= r.minutes + 5) {
+                    const [logs] = await connection.query(
+                        'SELECT id FROM reminder_logs WHERE prospect_id = ? AND reminder_type = ?',
+                        [apptLogId, r.label]
+                    );
+
+                    if (logs.length === 0) {
+                        const prospectInfo = appt.prospect_name ? `\n👤 ${appt.prospect_name}` : '';
+                        const msg = `
+<b>${r.text}</b>
+📌 <b>${appt.title}</b>${prospectInfo}
+📅 ${apptDate.toLocaleString('pt-BR')}
+🏷️ ${appt.type}
+                        `;
+                        await sendMessage(msg);
+
+                        await connection.query(
+                            'INSERT INTO reminder_logs (prospect_id, reminder_type) VALUES (?, ?)',
+                            [apptLogId, r.label]
+                        );
+                        console.log(`✅ Reminder ${r.label} sent for appointment ${appt.id}`);
                     }
                 }
             }

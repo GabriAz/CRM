@@ -6,11 +6,7 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 3001;
 
-app.use(cors({
-  origin: '*', // Permitir todas as origens (idealmente, trocar pelo domínio da Hostinger em produção)
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id']
-}));
+app.use(cors());
 app.use(express.json());
 
 // Database Connection Pool
@@ -50,17 +46,40 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/logs', require('./routes/logRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/appointments', require('./routes/appointmentRoutes'));
 
 // Basic Routes (Placeholder)
 app.get('/', (req, res) => {
   res.send('Studio Que CRM API');
 });
 
-const { startScheduler } = require('./scheduler');
-
-// Start Appointment Scheduler
-startScheduler();
+// Auto-migrate: create appointments table if not exists
+const runMigrations = async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS appointments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        date_start DATETIME NOT NULL,
+        date_end DATETIME,
+        prospect_id INT DEFAULT NULL,
+        type ENUM('Reunião', 'Tarefa', 'Lembrete', 'Outro') DEFAULT 'Reunião',
+        created_by INT DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Migrations OK');
+  } catch (err) {
+    console.error('⚠️ Migration error:', err.message);
+  }
+};
 
 // Start Server
+const { startScheduler } = require('./scheduler');
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+runMigrations().then(() => {
+  startScheduler();
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+});
